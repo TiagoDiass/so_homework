@@ -161,7 +161,7 @@ function calculateResults () {
 
     ];
     
-    addResults(results);
+    //addResults(results);
     
 }
 
