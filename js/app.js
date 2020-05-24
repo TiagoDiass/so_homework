@@ -6,6 +6,19 @@ const tableArea = document.querySelector('#table-area');
 
 let processes = [];
 
+class Process {
+    constructor(name, createTime, executionTime){
+        this.name = name,
+        this.createTime = createTime,
+        this.executionTime = executionTime,
+        this.turnaroundTime = this.executionTime
+    }
+
+    show () {
+        console.log(`Processo ${this.name}\nTempo de criação: ${this.createTime}\nTempo de execução: ${this.executionTime}\nTempo de turnaround: ${this.turnaroundTime}`);
+    }
+}
+
 insertButton.addEventListener('click', function (event) {
     event.preventDefault();
     addProcess();
@@ -22,10 +35,10 @@ clearButton.addEventListener('click', function (event) {
     clearTable();
 });
 
-// calculateButton.addEventListener('click', function (event) {
-//     event.preventDefault();
-//     calculateResults();
-// });
+calculateButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    calculateResults();
+});
 
 function addProcess () {
     let name = prompt('Digite o nome do processo:');
@@ -34,11 +47,7 @@ function addProcess () {
 
     if (!executionTime) return alert('Valor inválido, digite um número!');
 
-    let process = {
-        name,
-        createTime,
-        executionTime
-    }
+    let process = new Process(name, createTime, executionTime);
 
     processes.push(process);
     addToTable(process);
@@ -51,9 +60,11 @@ function addToTable (process) {
     const attributes = Object.keys(process);
     
     for (attribute of attributes) {
-        let tableData = document.createElement('td');
-        tableData.innerHTML = process[attribute];
-        tableRow.appendChild(tableData);
+        if (attribute != 'turnaroundTime') {
+            let tableData = document.createElement('td');
+            tableData.innerHTML = process[attribute];
+            tableRow.appendChild(tableData);
+        }
     }
 
     tableArea.querySelector('tbody').appendChild(tableRow);
@@ -90,21 +101,86 @@ function calculateResults () {
         totalProcessingTime += process.executionTime;
     }
 
-    let exit = false;
-    while (exit != true) {
+    let tempo = 0;
+    while (tempo < totalProcessingTime){
+        
         processes.forEach(process => {
-            if (process.executionTime > 0) {
-               process.executionTime = process.executionTime -= QUANTUM < 0 ? 0 : process.executionTime -= QUANTUM;
-               totalProcessingTime -= totalProcessingTime - QUANTUM;
-               
-               if (process.executionTime === 0) {
-                   process.turnAroundTime = totalProcessingTime;
-               }
+            if (process.turnaroundTime > 0 && !Object.isFrozen(process)) {
+                // console.log(`O processo ${process.name} chegou, e ele ainda tem ${process.turnaroundTime}s para ser executado, ele iniciou a execução em ${tempo}`);
+                process.turnaroundTime -= QUANTUM;
+
+                tempo += QUANTUM;
+                // console.log(`O processo ${process.name} executou ${QUANTUM}s e agora resta ${process.turnaroundTime} para ser executado, ele está finalizando a execução em ${tempo}`);
+
+                if (process.turnaroundTime <= 0) {
+                    // console.log(`O processo ${process.name} chegou a ${process.turnaroundTime}, por isso salvaremos o seu tempo de turnaround`);
+                    process.turnaroundTime = tempo;
+                    Object.freeze(process);
+                    // console.log(`O tempo de turnaround do processo ${process.name} foi salvo como ${process.turnaroundTime}`);
+                }
             }
+        });    
+    }
 
-            if (totalProcessingTime == 0) exit = true;
+    const turnaroundTimes = processes.map(process => process.turnaroundTime);
+    const processesWaitingTimes = processes.map(process => (process.turnaroundTime - process.createTime - process.executionTime));
+    
+    let averageReturnTime = 0; 
+    turnaroundTimes.forEach(turnaroundTime => {
+        averageReturnTime += turnaroundTime;
+    });
+    averageReturnTime = averageReturnTime / processes.length;
 
-        });
-    }    
+    let averageWaitingTime = 0;
+    processesWaitingTimes.forEach(processWaitingTime => averageWaitingTime += processWaitingTime);
+    averageWaitingTime = averageWaitingTime / processes.length;
+
+    console.log(totalProcessingTime);
+
+    let results = [
+        {
+            resultName: 'Tempo de turnaround de cada processo',
+            resulValues:turnaroundTimes
+        },
+        {
+            resultName: 'Tempo de espera de cada processo',
+            resulValues:processesWaitingTimes
+        },
+        {
+            resultName: 'Tempo médio de retorno',
+            resulValues:averageReturnTime
+        },
+        {
+            resultName: 'Tempo médio de espera',
+            resulValues:averageWaitingTime
+        },
+        {
+            resultName: 'Tempo total de processador',
+            resulValues:totalProcessingTime
+        }
+
+    ];
+    
+    addResults(results);
+    
+}
+
+function seed () {
+    
+    const createTime = 0;
+
+    let shits = [];
+    shits[0] = new Process('A', createTime, 6);
+
+    shits[1] = new Process('B', createTime, 8);
+
+    shits[2] = new Process('C', createTime, 4);
+
+    shits[3] = new Process('D', createTime, 2);
+    
+    shits.forEach(shit => {
+        processes.push(shit);
+        addToTable(shit);
+    });
 }
 
