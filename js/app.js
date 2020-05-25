@@ -88,6 +88,11 @@ function removeProcess (processToBeRemovedName) {
 function clearTable () {
     const tableBody = tableArea.querySelector('tbody');
     tableBody.innerHTML = '';
+    
+    let container = document.querySelector('.container')
+    let resultsArea = container.querySelector('#results');
+    resultsArea.querySelector('thead').innerHTML = '';
+    resultsArea.querySelector('tbody').innerHTML = '';
     processes = [];
 }
 
@@ -106,17 +111,17 @@ function calculateResults () {
         
         processes.forEach(process => {
             if (process.turnaroundTime > 0 && !Object.isFrozen(process)) {
-                // console.log(`O processo ${process.name} chegou, e ele ainda tem ${process.turnaroundTime}s para ser executado, ele iniciou a execução em ${tempo}`);
                 process.turnaroundTime -= QUANTUM;
-
+                
                 tempo += QUANTUM;
-                // console.log(`O processo ${process.name} executou ${QUANTUM}s e agora resta ${process.turnaroundTime} para ser executado, ele está finalizando a execução em ${tempo}`);
+
+                if (process.turnaroundTime < 0) {
+                    tempo -= process.turnaroundTime * (-1);
+                }
 
                 if (process.turnaroundTime <= 0) {
-                    // console.log(`O processo ${process.name} chegou a ${process.turnaroundTime}, por isso salvaremos o seu tempo de turnaround`);
                     process.turnaroundTime = tempo;
                     Object.freeze(process);
-                    // console.log(`O tempo de turnaround do processo ${process.name} foi salvo como ${process.turnaroundTime}`);
                 }
             }
         });    
@@ -140,29 +145,70 @@ function calculateResults () {
     let results = [
         {
             resultName: 'Tempo de turnaround de cada processo',
-            resulValues:turnaroundTimes
+            resultsValues: turnaroundTimes
         },
         {
             resultName: 'Tempo de espera de cada processo',
-            resulValues:processesWaitingTimes
+            resultsValues: processesWaitingTimes
         },
         {
             resultName: 'Tempo médio de retorno',
-            resulValues:averageReturnTime
+            resultsValues: [averageReturnTime]
         },
         {
             resultName: 'Tempo médio de espera',
-            resulValues:averageWaitingTime
+            resultsValues: [averageWaitingTime]
         },
         {
             resultName: 'Tempo total de processador',
-            resulValues:totalProcessingTime
+            resultsValues: [totalProcessingTime]
         }
 
     ];
     
-    //addResults(results);
+    addResults(results);
     
+}
+
+function addResults (results) {
+    
+    let resultsTable = document.querySelector('#results');
+    let tableHead = resultsTable.querySelector('thead');
+
+    let tableHeadRow = document.createElement('tr');
+    let firstColumn = document.createElement('th');
+    firstColumn.innerHTML = 'RESULTADOS';
+    tableHeadRow.appendChild(firstColumn);
+    for (process of processes) {
+        let tableHeadData = document.createElement('th');
+        tableHeadData.innerHTML = process.name;
+        tableHeadRow.appendChild(tableHeadData);
+    }
+
+    tableHead.appendChild(tableHeadRow);
+
+    let tableBody = resultsTable.querySelector('tbody');
+
+    results.forEach(resultObject => {
+        let tableRow = document.createElement('tr');
+        
+        let processNameInTable = document.createElement('td');
+        processNameInTable.innerHTML = resultObject.resultName;
+        tableRow.appendChild(processNameInTable);
+
+        resultObject.resultsValues.forEach((attribute, attributeIndex, array) => {
+            let colspanLength = array.length !== 1 ? 1 : processes.length; 
+            let tableData = document.createElement('td');
+            tableData.innerHTML = attribute;
+            tableData.setAttribute('colspan', colspanLength);
+            tableRow.appendChild(tableData);
+        });
+
+        tableBody.appendChild(tableRow);
+
+        resultsTable.appendChild(tableHead);
+        resultsTable.appendChild(tableBody);
+    });
 }
 
 function seed () {
