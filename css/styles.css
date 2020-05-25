@@ -29,18 +29,29 @@ ul {
     flex-wrap: wrap;
 }
 
-li a {
+li{
     display: flex;
     align-items: center;
     padding: 16px;
     background: #909497;
     border-radius: 5px;
-    color: #ECF0F1;
     transition: background 0.2s;
 }
 
-li a:hover {
+li:hover {
     background-color: #797D7F;
+}
+
+li#calculate {
+    background-color: #D4AC0D;
+}
+
+li#calculate:hover {
+    background-color: #B7950B;
+}
+
+li a {
+    color: #ECF0F1;
 }
 
 .container {
